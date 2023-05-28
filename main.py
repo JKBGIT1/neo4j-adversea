@@ -42,13 +42,15 @@ with open('clean_data.jl', 'r') as file:
                     graph.create(relationship)
             
             if 'gpt3_organizations' in article:
-                # TODO: add organization to article
                 organizations_with_associates = article['gpt3_organizations']
 
                 for org_with_asscs in organizations_with_associates:
                     org_name = org_with_asscs['organization']
                     org_cursor = graph.run(create_organization_query, name=name.lower())
                     org_node = org_cursor.data()[0]['organization']
+
+                    article_org_rel = Relationship(article_node, 'CONTAINS', org_node)
+                    graph.create(article_org_rel)
 
                     associates = org_with_asscs['associates']
 
