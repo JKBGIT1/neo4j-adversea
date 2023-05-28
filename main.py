@@ -63,7 +63,6 @@ with open('clean_data.jl', 'r') as file:
                         graph.create(relationship)
 
             if 'gpt3_associates' in article and 'business_associates' in article['gpt3_associates']:
-                # TODO: add each person to article, if already isn't
                 business_asscs = article['gpt3_associates']['business_associates']
 
                 length = len(business_asscs)
@@ -80,6 +79,9 @@ with open('clean_data.jl', 'r') as file:
                         relationship = Relationship(person_node1, 'BUSINESS ASSOCIATES', person_node2)
 
                         graph.create(relationship)
+
+                    article_person_rel = Relationship(article_node, 'CONTAINS', person_node1)
+                    graph.merge(article_node)
 
         except Exception as e:
             print(e)
