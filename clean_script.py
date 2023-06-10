@@ -1,7 +1,7 @@
 import json
  
  
-INPUT = "parsed_articles_2.jl"
+INPUT = "parsed_articles.jl"
 OUTPUT = "clean_data.jl"
  
 f_input = open(INPUT, "r", encoding="utf-8")

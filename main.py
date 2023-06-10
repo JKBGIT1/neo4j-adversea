@@ -17,71 +17,77 @@ RETURN organization;
 
 # TODO: create function create_person_and_relationship
 
-with open('clean_data.jl', 'r') as file:
-    for line in file:
-        article = json.loads(line)
+INPUT_FILES = ['clean_data.jl', 'clean_data_2018.jl']
 
-        article_title = article['title'].lower()
+for filename in INPUT_FILES:
+    with open(filename, 'r') as file:
+        for line in file:
+            article = json.loads(line)
 
-        article_node = Node('Article', title=article_title)
+            if type(article['title']) == list:
+                article_title = article['title'][0].lower()
+            else:
+                article_title = article['title'].lower()
 
-        graph.create(article_node)
+            article_node = Node('Article', title=article_title)
 
-        if 'gpt3_names' not in article:
-            continue
-        
-        try:
-            if 'gpt3_names' in article:
-                names = article['gpt3_names']
+            graph.create(article_node)
 
-                for name in names:
-                    person_cursor = graph.run(create_person_query, name=name.lower())
-                    person_node = person_cursor.data()[0]['person']
-                    relationship = Relationship(article_node, 'CONTAINS', person_node)
-
-                    graph.create(relationship)
+            if 'gpt3_names' not in article:
+                continue
             
-            if 'gpt3_organizations' in article:
-                organizations_with_associates = article['gpt3_organizations']
+            try:
+                if 'gpt3_names' in article:
+                    names = article['gpt3_names']
 
-                for org_with_asscs in organizations_with_associates:
-                    org_name = org_with_asscs['organization']
-                    org_cursor = graph.run(create_organization_query, name=name.lower())
-                    org_node = org_cursor.data()[0]['organization']
-
-                    article_org_rel = Relationship(article_node, 'CONTAINS', org_node)
-                    graph.create(article_org_rel)
-
-                    associates = org_with_asscs['associates']
-
-                    for name in associates:
+                    for name in names:
                         person_cursor = graph.run(create_person_query, name=name.lower())
                         person_node = person_cursor.data()[0]['person']
-
-                        relationship = Relationship(org_node, 'ASSOCIATES', person_node)
-
-                        graph.create(relationship)
-
-            if 'gpt3_associates' in article and 'business_associates' in article['gpt3_associates']:
-                business_asscs = article['gpt3_associates']['business_associates']
-
-                length = len(business_asscs)
-                for i in range(length):
-                    person_name1 = business_asscs[i].lower()
-                    person_cursor = graph.run(create_person_query, name=person_name1)
-                    person_node1 = person_cursor.data()[0]['person']
-
-                    for j in range(i + 1, length):
-                        person_name2 = business_asscs[j].lower()
-                        person_cursor = graph.run(create_person_query, name=person_name2)
-                        person_node2 = person_cursor.data()[0]['person']
-
-                        relationship = Relationship(person_node1, 'BUSINESS ASSOCIATES', person_node2)
+                        relationship = Relationship(article_node, 'CONTAINS', person_node)
 
                         graph.create(relationship)
+                
+                if 'gpt3_organizations' in article:
+                    organizations_with_associates = article['gpt3_organizations']
 
-                    article_person_rel = Relationship(article_node, 'CONTAINS', person_node1)
-                    graph.merge(article_node)
+                    for org_with_asscs in organizations_with_associates:
+                        org_name = org_with_asscs['organization']
+                        org_cursor = graph.run(create_organization_query, name=name.lower())
+                        org_node = org_cursor.data()[0]['organization']
 
-        except Exception as e:
-            print(e)
+                        article_org_rel = Relationship(article_node, 'CONTAINS', org_node)
+                        graph.create(article_org_rel)
+
+                        associates = org_with_asscs['associates']
+
+                        for name in associates:
+                            person_cursor = graph.run(create_person_query, name=name.lower())
+                            person_node = person_cursor.data()[0]['person']
+
+                            relationship = Relationship(org_node, 'ASSOCIATES', person_node)
+
+                            graph.create(relationship)
+
+                if 'gpt3_associates' in article and 'business_associates' in article['gpt3_associates']:
+                    business_asscs = article['gpt3_associates']['business_associates']
+
+                    length = len(business_asscs)
+                    for i in range(length):
+                        person_name1 = business_asscs[i].lower()
+                        person_cursor = graph.run(create_person_query, name=person_name1)
+                        person_node1 = person_cursor.data()[0]['person']
+
+                        for j in range(i + 1, length):
+                            person_name2 = business_asscs[j].lower()
+                            person_cursor = graph.run(create_person_query, name=person_name2)
+                            person_node2 = person_cursor.data()[0]['person']
+
+                            relationship = Relationship(person_node1, 'BUSINESS ASSOCIATES', person_node2)
+
+                            graph.create(relationship)
+
+                        article_person_rel = Relationship(article_node, 'CONTAINS', person_node1)
+                        graph.merge(article_node)
+
+            except Exception as e:
+                print(e)
